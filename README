@@ -1,0 +1,20 @@
+HTTP CONNECT (and only CONNECT) proxy, written in Go Lang.
+
+It runs in the foreground.
+
+Compiling
+---------
+
+6g -o httpconnectproxy.6 httpconnectproxy.go
+6l -o httpconnectproxy httpconnectproxy.6
+
+Running
+-------
+
+It will listen by default on 127.0.0.1:1080.
+
+Pass in :port or host:port as the first argument to make it
+listen on IP/port.
+
+eg. ./httpconnectproxy :1080
+
