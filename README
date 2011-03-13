@@ -1,4 +1,4 @@
-HTTP CONNECT (and only CONNECT) proxy, written in Go Lang.
+A simple HTTP CONNECT (and only CONNECT) proxy, written in Go Lang.
 
 It runs in the foreground.
 
@@ -11,10 +11,11 @@ Compiling
 Running
 -------
 
-It will listen by default on 127.0.0.1:1080.
+It will listen by default on 127.0.0.1:8080.
 
 Pass in :port or host:port as the first argument to make it
 listen on IP/port.
 
-eg. ./httpconnectproxy :1080
+For example, to listen on all interfaces on port 8080, run
 
+$ ./httpconnectproxy :8080

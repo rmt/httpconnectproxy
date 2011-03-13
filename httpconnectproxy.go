@@ -19,7 +19,7 @@ func Copy(a net.Conn, b net.Conn) {
 }
 
 func forward(local net.Conn, remoteAddr string) {
-    remote, err := net.Dial("tcp", "", remoteAddr);
+    remote, _ := net.Dial("tcp", "", remoteAddr);
     if remote == nil {
         io.WriteString(local, "HTTP/1.0 502 It's dead, Fred\r\n\r\n")
         local.Close();
@@ -62,7 +62,7 @@ func fatal(s string, a ... interface{}) {
 }
 
 func main() {
-    remote := "127.0.0.1:1080";
+    remote := "127.0.0.1:8080";
     if len(flag.Args()) != 0 {
         remote = flag.Arg(0)
     }
