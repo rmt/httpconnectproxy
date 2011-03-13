@@ -8,9 +8,27 @@ import (
     "os";
     "encoding/line";
     "regexp";
+    "exec";
 )
 
-func Copy(a net.Conn, b net.Conn) {
+var portspec string
+var command string
+
+type MyCmd exec.Cmd
+
+func (c MyCmd) Read(p []byte) (n int, err os.Error) {
+    return c.Stdout.Read(p)
+}
+func (c MyCmd) Write(p []byte) (n int, err os.Error) {
+    return c.Stdin.Write(p)
+}
+func (c MyCmd) Close() os.Error {
+    c.Stdin.Close()
+    return c.Stdout.Close()
+    // TODO: kill process if still running?
+}
+
+func Copy(a io.ReadWriteCloser, b io.ReadWriteCloser) {
     // setup one-way forwarding of stream traffic
     io.Copy(a, b)
     // and close both connections when a read fails
@@ -28,6 +46,22 @@ func forward(local net.Conn, remoteAddr string) {
     io.WriteString(local, "HTTP/1.0 200 Connection Established\r\n\r\n")
     go Copy(local, remote);
     go Copy(remote, local);
+}
+
+func forward2cmd(local net.Conn, remoteAddr string) {
+    remoteenvstr := "REMOTE=" + local.RemoteAddr().String();
+    cwd, err := os.Getwd(); if err != nil { cwd = "/" }
+    remote, _ := exec.Run(command, []string{command, remoteAddr},
+        []string{remoteenvstr}, cwd,
+        exec.Pipe, exec.Pipe, exec.DevNull)
+    if remote == nil {
+        io.WriteString(local, "HTTP/1.0 502 It's dead, Fred\r\n\r\n")
+        local.Close();
+        return;
+    }
+    io.WriteString(local, "HTTP/1.0 200 Connection Established\r\n\r\n")
+    go Copy(local, MyCmd(*remote));
+    go Copy(MyCmd(*remote), local);
 }
 
 func newconn(c net.Conn) {
@@ -52,7 +86,11 @@ func newconn(c net.Conn) {
         if len(l) == 0 { break; }
     }
     if l != nil {
-        forward(c, m[1]);
+        if(command == "") {
+            forward(c, m[1]);
+        } else {
+            forward2cmd(c, m[1]);
+        }
     }
 }
 
@@ -62,17 +100,16 @@ func fatal(s string, a ... interface{}) {
 }
 
 func main() {
-    remote := "127.0.0.1:8080";
-    if len(flag.Args()) != 0 {
-        remote = flag.Arg(0)
-    }
-    netlisten, err := net.Listen("tcp", remote);
+    flag.StringVar(&command, "E", "", "Executable to run with CONNECT string as argument")
+    flag.StringVar(&portspec, "P", "127.0.0.1:8080", ":port or ip:port to listen on.")
+    flag.Parse()
+    netlisten, err := net.Listen("tcp", portspec);
     if netlisten == nil {
         fatal("Error: %v", err);
     }
     defer netlisten.Close();
 
-    fmt.Fprintf(os.Stderr, "Listening for HTTP CONNECT's on %s\n", remote);
+    fmt.Fprintf(os.Stderr, "Listening for HTTP CONNECT's on %s\n", portspec);
 
     for {
         // wait for clients

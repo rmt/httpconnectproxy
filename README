@@ -13,9 +13,22 @@ Running
 
 It will listen by default on 127.0.0.1:8080.
 
-Pass in :port or host:port as the first argument to make it
-listen on IP/port.
+Usage of ./httpconnectproxy:
+  -E="": Executable to run with CONNECT string as argument
+  -P="127.0.0.1:8080": :port or ip:port to listen on.
 
-For example, to listen on all interfaces on port 8080, run
+For example, to listen on all interfaces on port 8080 and forward
+using TCP, run:
 
-$ ./httpconnectproxy :8080
+$ ./httpconnectproxy -P :8080
+
+To listen on port 8080 and echo the destination back to the caller
+by calling /bin/echo, run:
+
+$ ./httpconnectproxy -P :8080 -E /bin/echo
+
+The executable is not passed through a shell, and it will be called with
+exactly one argument, the string that's between "CONNECT " and " HTTP/1"
+
+The REMOTE environment variable will be set, allowing you to do some some basic
+security or logging.
