@@ -37,12 +37,20 @@ func Copy(a io.ReadWriteCloser, b io.ReadWriteCloser) {
 }
 
 func forward(local net.Conn, remoteAddr string) {
-    remote, _ := net.Dial("tcp", "", remoteAddr);
+    var laddr *net.TCPAddr
+    raddr, err := net.ResolveTCPAddr(remoteAddr)
+    if err != nil {
+        io.WriteString(local, "HTTP/1.0 502 That's no street, Pete\r\n\r\n")
+        local.Close()
+        return
+    }
+    remote, _ := net.DialTCP("net", laddr, raddr);
     if remote == nil {
         io.WriteString(local, "HTTP/1.0 502 It's dead, Fred\r\n\r\n")
-        local.Close();
-        return;
+        local.Close()
+        return
     }
+    remote.SetKeepAlive(true)
     io.WriteString(local, "HTTP/1.0 200 Connection Established\r\n\r\n")
     go Copy(local, remote);
     go Copy(remote, local);
