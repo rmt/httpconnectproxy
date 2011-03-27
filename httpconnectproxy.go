@@ -9,6 +9,7 @@ import (
     "encoding/line";
     "regexp";
     "exec";
+    "syscall";
 )
 
 var portspec string
@@ -23,9 +24,12 @@ func (c MyCmd) Write(p []byte) (n int, err os.Error) {
     return c.Stdin.Write(p)
 }
 func (c MyCmd) Close() os.Error {
-    c.Stdin.Close()
-    return c.Stdout.Close()
-    // TODO: kill process if still running?
+    // send SIGHUP then close in the normal way
+    if c.Pid > 0 {
+        syscall.Kill(c.Pid, syscall.SIGHUP)
+    }
+    cmd := exec.Cmd(c)
+    return cmd.Close()
 }
 
 func Copy(a io.ReadWriteCloser, b io.ReadWriteCloser) {
