@@ -25,8 +25,8 @@ func (c MyCmd) Write(p []byte) (n int, err os.Error) {
 }
 func (c MyCmd) Close() os.Error {
     // send SIGHUP then close in the normal way
-    if c.Pid > 0 {
-        syscall.Kill(c.Pid, syscall.SIGHUP)
+    if c.Process.Pid > 0 {
+        syscall.Kill(c.Process.Pid, syscall.SIGHUP)
     }
     cmd := exec.Cmd(c)
     return cmd.Close()
@@ -42,7 +42,7 @@ func Copy(a io.ReadWriteCloser, b io.ReadWriteCloser) {
 
 func forward(local net.Conn, remoteAddr string) {
     var laddr *net.TCPAddr
-    raddr, err := net.ResolveTCPAddr(remoteAddr)
+    raddr, err := net.ResolveTCPAddr("", remoteAddr)
     if err != nil {
         io.WriteString(local, "HTTP/1.0 502 That's no street, Pete\r\n\r\n")
         local.Close()
